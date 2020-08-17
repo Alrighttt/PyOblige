@@ -14,13 +14,13 @@ oblige_wep_quantity_vals = ["default", "none", "scarce", "less", "plenty", "more
 oblige_options = {
 
     # General options
-    "game": ["doom2", "doom"],
-    "engine": ["zdoom", "gzdoom", "vizdoom"],
+    "game": ["ultdoom", "doom2", "doom"],
+    "engine": ["boom", "zdoom", "gzdoom", "vizdoom"],
     "length": ["single", "few", "episode", "game"],
     "theme": ["original", "mostly_original", "epi", "mostly_epi", "bit_mixed", "jumble",
               "tech", "mostly_tech", "urban", "mostly_urban", "hell", "mostly_hell"],
 
-    "size": ["micro", "tiny", "small", "regular", "large", "extreme", "epi", "prog", "mixed"],
+    "size": ["small", "regular", "large", "extreme", "epi", "prog", "mixed", "micro", "tiny"],
     "outdoors": oblige_frequency_vals,
     "caves": oblige_frequency_vals,
     "liquids": oblige_frequency_vals,
@@ -31,14 +31,14 @@ oblige_options = {
     "mons": ["scarce", "few", "less", "some", "more", "nuts", "mixed", "none"],
     "strength": ["weak", "easier", "normal", "harder", "tough", "crazy"],
     "ramp_up": ["slow", "medium", "fast", "episodic"],
-    "bosses": ["none", "easier", "normal", "harder"],
-    "traps": ["none"] + oblige_frequency_vals,
-    "cages": ["none"] + oblige_frequency_vals,
+    "bosses": ["normal", "none", "easier", "harder"],
+    "traps": oblige_frequency_vals + ["none"],
+    "cages": oblige_frequency_vals + ["none"],
 
-    "health": ["none", "scarce", "less", "bit_less", "normal", "bit_more", "more", "heaps"],
-    "ammo": ["none", "scarce", "less", "bit_less", "normal", "bit_more", "more", "heaps"],
-    "weapons": ["none", "very_soon", "sooner", "normal", "later", "very_late"],
-    "items": ["none", "rare", "less", "normal", "more", "heaps"],
+    "health": ["normal", "none", "scarce", "less", "bit_less", "bit_more", "more", "heaps"],
+    "ammo": ["normal", "none", "scarce", "less", "bit_less", "normal", "bit_more", "more", "heaps"],
+    "weapons": ["normal", "none", "very_soon", "sooner", "later", "very_late"],
+    "items": ["normal", "none", "rare", "less", "more", "heaps"],
     "secrets": oblige_frequency_vals,
 
     # Modules' options
@@ -292,16 +292,13 @@ class DoomLevelGenerator(object):
 
             # Check if provided config is correct
             if k not in oblige_options:
-                raise ValueError("Provided key '{}' is not valid Oblige option!".format(k))
+                raise ValueError("Provided key {} is not valid Oblige option!".format(k))
 
             if v not in oblige_options[k]:
-                raise ValueError("Provided value '{}' is not valid value of '{}'!\nAvailable values: {}"
+                raise ValueError("Provided value {} is not valid value of {}!\nAvailable values: "
                                  .format(v, k, oblige_unique_vals(oblige_options[k])))
 
             self.config[k] = v
-
-    def get_config(self):
-        return self.config
 
     def generate(self, wad_path, verbose=False):
         # Config preprocessing
@@ -344,13 +341,18 @@ class DoomLevelGenerator(object):
                   '\nOutput wad file path: "{}"'
                   '\nOblige executable path: "{}"'.format(config_path, wad_path, oblige_path))
 
-        cmd = '"{}" --batch "{}" --load "{}" --keep'.format(oblige_exe, wad_path, config_path)
+        args = [oblige_exe]
+        args.append('--batch')
+        args.append(wad_path)
+        args.append('--load')
+        args.append(config_path)
+        args.append('--keep')
         if verbose:
-           cmd += " --verbose"
+          args.append('--verbose')
 
         # Launch Oblige
         try:
-            oblige_process = subprocess.Popen(cmd, cwd=oblige_realpath(oblige_dir), shell=True,
+            oblige_process = subprocess.Popen(args, cwd=oblige_realpath(oblige_dir), shell=False,
                                               stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
             results = oblige_process.communicate()[0]
             exit_code = oblige_process.returncode
